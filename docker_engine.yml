@@ -1,0 +1,63 @@
+#!/usr/bin/ansible-playbook
+---
+- name: Configure Docker host server
+  become: True
+  hosts: localhost
+  vars:
+    docker:
+      repo_url: 'https://download.docker.com/linux/centos/docker-ce.repo'
+  tasks:
+    - name: remove existing docker packages to replace with docker-ce
+      dnf:
+        state: absent
+        name:
+          - docker
+          - docker-client
+          - docker-common
+          - docker-latest
+          - docker-latest-logrotate
+          - docker-logrotate
+          - docker-engine
+    - name: download docker-ce repository file
+      get_url:
+        url: '{{ docker.repo_url }}'
+        dest: /etc/yum.repos.d/
+        owner: root
+        group: root
+        mode: 0644
+    - name: install docker-ce and docker-ce-cli
+      dnf:
+        state: latest
+        name:
+          - docker-ce
+          - docker-ce-cli
+      notify: restart docker service
+
+    - name: enable docker service
+      service:
+        state: started
+        name: docker
+        enabled: true
+
+    - name: download docker-compose binary to /usr/local/bin
+      get_url: 
+        url: 'https://github.com/docker/compose/releases/download/1.26.0/docker-compose-{{ ansible_system }}-{{ ansible_architecture }}'
+        dest: /usr/local/bin/docker-compose
+        backup: true
+        group: root
+        owner: root
+        mode: 0755
+    - name: link docker-compose to /usr/bin
+      file:
+        state: link
+        src: /usr/local/bin/docker-compose
+        dest: /usr/bin/docker-compose
+        owner: root
+        group: root
+
+  handlers:
+    - name: restart docker service
+      service:
+        name: docker
+        state: restarted
+...
