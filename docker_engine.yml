@@ -31,6 +31,7 @@
         name:
           - docker-ce
           - docker-ce-cli
+          - containerd.io
       notify: restart docker service
 
     - name: enable docker service
