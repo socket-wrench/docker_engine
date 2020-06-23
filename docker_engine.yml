@@ -25,14 +25,23 @@
         owner: root
         group: root
         mode: 0644
-    - name: install docker-ce and docker-ce-cli
-      dnf:
-        state: latest
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-      notify: restart docker service
+
+## Temporary fix for containerd/dnf/centos8 issues
+     - name: install docker-ce via command until they fix dnf or containerd
+       command: dnf install -y --nobest docker-ce docker-ce-cli containerd.io
+       register: docker_install_results
+       changed_when: '"Installed:" in docker_install_results.stdout'
+       notify: restart docker service
+
+## Commenting out this task until dnf either implements a nobest option or docker gets with the centos 8 world on containerd.io
+    #- name: install docker-ce and docker-ce-cli
+      #dnf:
+        #state: latest
+        #name:
+          #- docker-ce
+          #- docker-ce-cli
+          #- containerd.io
+      #notify: restart docker service
 
     - name: enable docker service
       service:
